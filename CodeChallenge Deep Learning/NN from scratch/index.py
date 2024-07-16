@@ -1,14 +1,17 @@
 import numpy as np
-
+import activations
+import matplotlib.pyplot as plt
 class NeuralNetwork:
-    def __init__(self, input, hiddenlayer, activation_hidden, outputlayer, idealValues, activation_output):
+    def __init__(self, input, hiddenlayer, activation_hidden, outputlayer, idealValues, activation_output,learning_rate):
         self.input = np.array(input).reshape(1, -1)  # Ensure input is a row vector
         self.hiddenlayer = hiddenlayer
-        self.activation_hidden = activation_hidden
-        self.activation_output = activation_output
+        self.activation_hidden = activation_hidden[0]
+        self.activation_hidden_derivative = activation_hidden[1]
+        self.activation_output = activation_output[0]
+        self.activation_output_derivative = activation_output[1]
         self.outputlayer = outputlayer
         self.idealValues = idealValues
-
+        self.learning_rate = learning_rate
         self.no_of_neurons = [self.input.shape[1]]
 
         for neurons in hiddenlayer:
@@ -30,7 +33,7 @@ class NeuralNetwork:
 
     def Forwardpass(self):
         for i in range(len(self.W) - 1):
-            Mat_Vec_Mul = self.W[i] @ np.transpose(self.A[i])  # weight activation(L-1) multiplication weight matrix of (L) and (L-1)
+            Mat_Vec_Mul = self.W[i] @ np.transpose(self.A[i])  # weight and activation(L-1) multiplication , weight matrix of (L) and (L-1)
             
             shape = Mat_Vec_Mul.shape # to adjust the shape from (i x 1 ) of vectors to  (i,) to reduce errors in computation
             Z = (Mat_Vec_Mul.reshape(shape[0]))+ self.b[i] # Z = wx + b --> weighted sum
@@ -44,22 +47,76 @@ class NeuralNetwork:
         self.Z.append(Z)
         A = self.activation_output(Z)
         self.A.append(A)
+        Loss = self.Loss()
+        return Loss;
+    
 
-def LeakyRelu(x):
-    return np.maximum(0.1 * x, x)
-
-def Tanh(x):
-    return np.tanh(x)
+        
+    def Loss(self):
+      
+      if(len(self.idealValues)==self.outputlayer):
+  
+        activations = self.A[-1]
+        loss_values = (activations - self.idealValues) 
+        return np.mean(loss_values)
+   
+      else:
+          print("no of neurons in output kayer doesnt match the no of ideal values ")
+          
+    def Backwardpass(self):
+    # Output layer error
+      output_error = (self.A[-1] - self.idealValues)
+      output_delta = output_error * self.activation_output_derivative(self.Z[-1]) ## delta(l) = Error * d(sigma)/dz = activation_output_derivative(Z(l))
+    
+    # Reshape for correct dimensions
+      output_delta = output_delta.reshape(-1, 1)
+      self.A[-2] = self.A[-2].reshape(1, -1)
+    
+    # Gradients for output layer
+      dW = output_delta @ self.A[-2]
+      db = np.sum(output_delta, axis=1)
+    
+      self.W[-1] -= self.learning_rate * dW
+      self.b[-1] -= self.learning_rate * db
+    
+    # Backpropagate through hidden layers
+      delta = output_delta
+      for i in range(len(self.W) - 2, -1, -1):
+        delta = (self.W[i + 1].T @ delta).reshape(-1) * self.activation_hidden_derivative(self.Z[i]) ## W(L+1,L)^T * delta(L) *  d(sigma(L-i))/dz =  activation_hidden_derivative(self.Z[i])
+        
+        # Reshape for correct dimensions
+        delta = delta.reshape(-1, 1)
+        self.A[i] = self.A[i].reshape(1, -1)
+        
+        dW = delta @ self.A[i]
+        db = np.sum(delta, axis=1)
+        
+        self.W[i] -= self.learning_rate * dW
+        self.b[i] -= self.learning_rate * db
+ 
+            
+            
+    def train(self, epochs=200000):
+        LossValues = []
+        for _ in range(epochs):
+            loss = self.Forwardpass()
+            LossValues.append(loss)
+            self.Backwardpass()
+        return LossValues    
 
 # Example usage
 NN = NeuralNetwork(
     input=[1, 2, 3],
-    hiddenlayer=[2],
-    activation_hidden=LeakyRelu,
+    hiddenlayer=[4],
+    activation_hidden=(activations.LeakyRelu,activations.LeakyRelu_derivative),
     outputlayer=3,
-    idealValues=[1, 2, 3, 4],
-    activation_output=Tanh
+    idealValues=[1, 2,3],
+    activation_output=(activations.LeakyRelu, activations.LeakyRelu_derivative),
+    learning_rate=1e-4
 )
 
-NN.Forwardpass()
 
+
+NN.train()
+
+print(NN.A[-1])
