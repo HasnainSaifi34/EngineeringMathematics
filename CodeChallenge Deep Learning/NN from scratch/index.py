@@ -96,7 +96,7 @@ class NeuralNetwork:
  
             
             
-    def train(self, epochs=200000):
+    def train(self, epochs):
         LossValues = []
         for _ in range(epochs):
             loss = self.Forwardpass()
@@ -104,19 +104,4 @@ class NeuralNetwork:
             self.Backwardpass()
         return LossValues    
 
-# Example usage
-NN = NeuralNetwork(
-    input=[1, 2, 3],
-    hiddenlayer=[4],
-    activation_hidden=(activations.LeakyRelu,activations.LeakyRelu_derivative),
-    outputlayer=3,
-    idealValues=[1, 2,3],
-    activation_output=(activations.LeakyRelu, activations.LeakyRelu_derivative),
-    learning_rate=1e-4
-)
 
-
-
-NN.train()
-
-print(NN.A[-1])

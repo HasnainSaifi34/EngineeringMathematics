@@ -25,7 +25,9 @@ def selu(x, alpha=1.67326, lambda_=1.0507):
 def softmax(x):
   exp_x = np.exp(x)
   return exp_x / np.sum(exp_x, axis=-1, keepdims=True)
-
+def softmax_derivative(z):
+    s = softmax(z)
+    return np.diag(s) - np.outer(s, s)
 
 
 def LeakyRelu_derivative(x):
@@ -34,3 +36,13 @@ def LeakyRelu_derivative(x):
 def sigmoid_derivative(x):
     s = sigmoid(x)
     return s * (1 - s)  
+  
+  
+def softmax(z):
+        e_z = np.exp(z - np.max(z))
+        return e_z / np.sum(e_z)
+    
+    # Implement softmax derivative
+def softmax_derivative(z):
+        s = softmax(z)
+        return np.diag(s) - np.outer(s, s)
