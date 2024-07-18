@@ -42,14 +42,14 @@ class NeuralNetwork:
         return (0.5)*np.mean(loss_values)
 
     def backward_pass(self):
-        output_error = self.A[-1] - self.ideal_values
-        output_delta = output_error * self.activation_output_derivative(self.Z[-1].T) # Error in output layer
+        output_error = self.A[-1] - self.ideal_values #( d(loss)/d(activations))
+        output_delta = output_error * self.activation_output_derivative(self.Z[-1].T) #  (  d(loss)/d(activations) * d(activations)/d(z) ) 
         
-        dW = output_delta.T @ self.A[-2]
+        dW = output_delta.T @ self.A[-2] #  d(loss)/d(activations) * d(activations)/d(z) * d(z)/d(w) ---> z = wx + b 
         db = np.sum(output_delta, axis=0)
         
-        self.W[-1] -= self.learning_rate * dW
-        self.b[-1] -= self.learning_rate * db
+        self.W[-1] -= self.learning_rate * dW  # updating weights (output layer)
+        self.b[-1] -= self.learning_rate * db  # updating biases  (output layer)
         
         delta = output_delta
         for i in range(len(self.W) - 2, -1, -1):
